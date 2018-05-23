@@ -1,6 +1,5 @@
 import urllib.request
 from bs4 import BeautifulSoup
-import csv
 from datetime import datetime
 from multiprocessing import Pool
 import numpy as np
