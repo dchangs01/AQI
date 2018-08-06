@@ -1,52 +1,55 @@
 import urllib.request
 from bs4 import BeautifulSoup
 from datetime import datetime
-from multiprocessing import Pool
+import pandas as pd
 import numpy as np
+import tkinter as tk
+from tkinter import messagebox
+from tkinter import filedialog
+root = tk.Tk()
+root.withdraw()
+messagebox.showinfo('Save Direcotry', 'Select directory to save CSV...')
+save_dir = filedialog.askdirectory()
 
 
 class AQI:
-    """Prints out to console the AQI of cities in the 9-County Bay Area and exports to CSV
+    """Prints out to console the AQI of cities in the 9-County Bay Area and exports to CSV.
+       Appends new AQI found to CSV as new column with timestamp.
     """
+
     def __init__(self, zipcodes):
         """Constructor
         :param zipcodes: list of target zipcodes
         :type zipcodes: str
         """
         self.zipcodes = zipcodes
-        self.aqi_array = np.array([['City', 'AQI', 'Date/Time Accessed']])
+        self.columns = ['City', 'Zipcode', 'AQI on {}'.format(datetime.now())]
+        self.temp_list = []
+        try:
+            self.aqi_df = pd.read_csv(save_dir + '/aqi.csv')
+        except FileNotFoundError:
+            self.aqi_df = pd.DataFrame(columns=self.columns)
 
-    def write_data(self, zipcode):
-        """Writes the zipcode city and its AQI to aqi.csv
+    def get_data(self, zipcode):
+        """Gets the AQI within the specified zipcode
+        :param zipcode: target zipcode
+        :type zipcode: str
         """
+        print('Getting {} AQI...'.format(zipcode))
+
         webpage = 'https://airnow.gov/index.cfm?action=airnow.local_city&zipcode=' + zipcode + '&submit=Go'
         page_html = urllib.request.urlopen(webpage)
-
         soup = BeautifulSoup(page_html, 'html.parser')
-
         city_html = soup.find('td', attrs={'class': 'ActiveCity'})
         aqi_html = soup.find('tr', attrs={'style': 'color:black;text-align:center;font-weight:200'})
 
         city = city_html.text.strip()
         aqi = aqi_html.text.strip()
 
-        print('The AQI in ' + city + ' is: ' + aqi)
-
-        return [city, aqi, datetime.now()]
-
-    def mp_write(self):
-        """Multiprocessing
-        """
-        with Pool(4) as p:
-            self.aqi_array = np.append(self.aqi_array, p.map(self.write_data, self.zipcodes), axis=0)
-
-    def to_csv(self, save_directory):
-        """Save data array to CSV
-        :param save_directory: directory to save data table in
-        :type save_directory: str
-        """
-        print('Saving to CSV...')
-        np.savetxt(save_directory + '/aqi.csv', self.aqi_array, delimiter=',', encoding='utf-8', fmt='%s')
+        if self.aqi_df.shape[0] != 0:
+            self.temp_list.append(aqi)
+        else:
+            self.temp_list.append([city, zipcode, aqi])
 
 
 if __name__ == '__main__':
@@ -56,9 +59,15 @@ if __name__ == '__main__':
     zipcodes = ['94501', '94507', '94901', '94558', '94124',
                 '94010', '95122', '94534', '95476']
 
-    save_directory = '/home/daniel/AQI'
-
     aqi = AQI(zipcodes)
-    aqi.mp_write()
-    aqi.to_csv(save_directory)
-    print(aqi.aqi_array)
+    for i in zipcodes:
+        aqi.get_data(i)
+    aqi.temp_list = np.array(aqi.temp_list)
+    if aqi.aqi_df.shape[0] != 0:
+        aqi.temp_list = pd.Series(aqi.temp_list)
+        aqi.aqi_df['AQI on {}'.format(datetime.now())] = aqi.temp_list.values
+    else:
+        aqi.temp_list = pd.DataFrame(aqi.temp_list, columns=aqi.columns)
+        aqi.aqi_df = aqi.aqi_df.append(aqi.temp_list, ignore_index=True)
+
+    aqi.aqi_df.to_csv(save_dir + '/aqi.csv', index=False)
