@@ -25,7 +25,6 @@ class AQI:
         """
         self.zipcodes = zipcodes
         self.columns = ['City', 'Zipcode', 'AQI on {}'.format(datetime.now())]
-        self.temp_list = []
         try:
             self.aqi_df = pd.read_csv(save_dir + '/aqi.csv')
         except FileNotFoundError:
@@ -73,7 +72,7 @@ if __name__ == '__main__':
                 '94010', '95122', '94534', '95476']
 
     aqi = AQI(zipcodes)
-    while aqi.aqi_df.shape[1] < 10: # <-- Once the table hits 10 columns, program ends.
+    while aqi.aqi_df.shape[1] < 10:  # <-- Once the table hits 10 columns, program ends.
         aqi.get_aqi(zipcodes)
-        #time.sleep(21600 - time.time() % 21600) # <-- Gets the AQI every 6 hours 
-        time.sleep(30 - time.time() % 30) # <-- Gets the AQI every 30 seconds
+        #time.sleep(21600 - time.time() % 21600)  # <-- Gets the AQI every 6 hours 
+        time.sleep(30 - time.time() % 30)  # <-- Gets the AQI every 30 seconds
