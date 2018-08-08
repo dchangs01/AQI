@@ -15,7 +15,6 @@ from tkinter import filedialog
 import time
 from time import sleep
 from threading import Thread
-starttime = time.time()
 root = tk.Tk()
 root.withdraw()
 messagebox.showinfo('Save Directory', 'Select directory to save CSV...')
