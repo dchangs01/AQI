@@ -29,7 +29,7 @@ class AQI:
     def __init__(self, zipcodes):
         """Constructor
         :param zipcodes: list of target zipcodes
-        :type zipcodes: str
+        :type zipcodes: str[]
         """
         self.zipcodes = zipcodes
         self.columns = ['City', 'Zipcode', 'AQI on {}'.format(datetime.now())]
@@ -40,8 +40,6 @@ class AQI:
 
     def get_aqi(self):
         """Gets the AQI and exports to CSV
-        :param zipcodes: zipcodes targeted
-        :type zipcodes: str[]
         """
         print('Getting AQI...')
 
