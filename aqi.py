@@ -1,3 +1,10 @@
+"""Prints out to console the AQI of zipcodes in the 9-County Bay Area,
+   and exports to CSV. Appends new AQI found to CSV as new column
+   with timestamp.
+
+   Script gets the AQI once every specified interval of time,
+   and continues running for a specified amount of time.
+"""
 import urllib.request
 from bs4 import BeautifulSoup
 from datetime import datetime
@@ -6,16 +13,17 @@ import tkinter as tk
 from tkinter import messagebox
 from tkinter import filedialog
 import time
+from time import sleep
+from threading import Thread
 starttime = time.time()
 root = tk.Tk()
 root.withdraw()
-messagebox.showinfo('Save Direcotry', 'Select directory to save CSV...')
+messagebox.showinfo('Save Directory', 'Select directory to save CSV...')
 save_dir = filedialog.askdirectory(parent=root)
 
 
 class AQI:
-    """Prints out to console the AQI of cities in the 9-County Bay Area and exports to CSV.
-       Appends new AQI found to CSV as new column with timestamp.
+    """Class Object
     """
 
     def __init__(self, zipcodes):
@@ -30,7 +38,7 @@ class AQI:
         except FileNotFoundError:
             self.aqi_df = pd.DataFrame(columns=self.columns)
 
-    def get_aqi(self, zipcodes):
+    def get_aqi(self):
         """Gets the AQI and exports to CSV
         :param zipcodes: zipcodes targeted
         :type zipcodes: str[]
@@ -38,7 +46,7 @@ class AQI:
         print('Getting AQI...')
 
         aqi_list = []
-        for z in zipcodes:
+        for z in self.zipcodes:
             webpage = 'https://airnow.gov/index.cfm?action=airnow.local_city&zipcode=' + z + '&submit=Go'
             page_html = urllib.request.urlopen(webpage)
             soup = BeautifulSoup(page_html, 'html.parser')
@@ -63,6 +71,13 @@ class AQI:
         self.aqi_df.to_csv(save_dir + '/aqi.csv', index=False)
         print(self.aqi_df)
 
+    def run_aqi(self):
+        """Runs get_aqi() every 30 seconds
+        """
+        while True:
+            self.get_aqi()
+            time.sleep(30 - time.time() % 30)
+
 
 if __name__ == '__main__':
     """Main
@@ -72,7 +87,7 @@ if __name__ == '__main__':
                 '94010', '95122', '94534', '95476']
 
     aqi = AQI(zipcodes)
-    while aqi.aqi_df.shape[1] < 10:  # <-- Once the table hits 10 columns, program ends.
-        aqi.get_aqi(zipcodes)
-        #time.sleep(21600 - time.time() % 21600)  # <-- Gets the AQI every 6 hours 
-        time.sleep(30 - time.time() % 30)  # <-- Gets the AQI every 30 seconds
+    t = Thread(target=aqi.run_aqi)
+    t.daemon = True
+    t.start()
+    sleep(180)  # <-- Runs script for 180 seconds
